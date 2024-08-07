@@ -7,3 +7,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, null=True, blank=True)
     dietary_preferences = models.TextField(null=True, blank=True)
 
+    def __str__(self):
+        return self.name
+
+

@@ -23,6 +23,10 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+    def is_suitable_for(self, dietary_preferences):
+        # Check if the recipe is suitable for the user's dietary preferences
+        return True
+
 
                                                                                             # Through model for Recipe and Ingredient many-to-many relationship
 class RecipeIngredient(models.Model):
@@ -32,7 +36,7 @@ class RecipeIngredient(models.Model):
     unit = models.CharField(max_length=50)
 
     def __str__(self):
-        return f"{self.ingredient.name} - {self.quantity} {self.unit}"
+        return f"{self.quantity} {self.unit} of {self.ingredient.name} for {self.recipe.name}"
 
 
 # Meal Plan model
@@ -42,7 +46,7 @@ class MealPlan(models.Model):
     date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.name} - {self.date}"
+        return f"{self.user.username}'s plan for {self.date}"
 
 # Review model
 class Review(models.Model):
@@ -52,7 +56,7 @@ class Review(models.Model):
     comment = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.name} - {self.recipe.name} - {self.rating}"
+        return f"Review of {self.recipe.name} by {self.user.username}"
 
 # Favorite model
 class Favourite(models.Model):
@@ -60,4 +64,4 @@ class Favourite(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.user.name} - {self.recipe.name}"
+        return f"{self.user.username} favorited {self.recipe.name}"

@@ -12,4 +12,6 @@ urlpatterns = [
     path('reviews/<int:pk>/', ReviewDetail.as_view(), name='review-detail'),
     path('favourites/', FavouriteList.as_view(), name='favourite-list'),
     path('favourites/<int:pk>', FavouriteDetail.as_view(), name='favourite-detail'),
+    path('generate-recipe/', generate_recipe, name='generate-recipe'),
+    path('search-recipe/', search_recipes, name='search-recipe'),
 ]

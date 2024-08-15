@@ -3,6 +3,7 @@
 import os
 import json
 from typing import List
+from django.http import JsonResponse
 from groq import Groq
 
 from recipes.models import Recipe
@@ -59,3 +60,39 @@ def get_recipe_variations(recipe_name: str) -> List[Recipe]:
         response_format={"type": "json_array"},
     )
     return [Recipe.model_validate_json(recipe) for recipe in chat_completion.choices[0].message.content]
+
+def suggest_recipes(recipe_name: str):
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a recipe database that outputs only a list of recipe names.\n"
+                           "You give at least 3 recipe names.\n"
+                           "Ensure it includes only the name of the recipes:\n"
+                           "DOn't number them"
+            },
+            {
+                "role": "user",
+                "content": f"Fetch a list of recipes for {recipe_name}",
+            },
+        ],
+        model="llama3-8b-8192",
+        temperature=0,
+        stream=False,
+        # response_format={"type": "json_array"},
+    )
+
+
+    # Extract the response content
+    response_text = chat_completion.choices[0].message.content.strip()
+
+    # Split the response into a list of recipe names
+    recipe_names = response_text.split('\n')
+    exclude_words = {'recipe', 'recipes', 'name', 'names', 'list', 'lists', 'title', 'titles'}
+
+    # Filter out non-recipe lines (e.g., introduction lines)
+    recipes = [line.strip() for line in recipe_names if line.strip() and not any(word in line.lower() for word in exclude_words)]
+
+
+    # Format as a JSON response
+    return JsonResponse({'recipes': recipes})

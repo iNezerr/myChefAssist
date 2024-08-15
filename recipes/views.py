@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from groq import Groq
 from rest_framework import generics
 from rest_framework.decorators import api_view
-from .utils import get_recipe_from_groq, get_recipe_variations
+from .utils import get_recipe_from_groq, get_recipe_variations, suggest_recipes
 from .models import Ingredient, Recipe, MealPlan, Review, Favourite, RecipeIngredient
 from .serializers import IngredientSerializer, RecipeSerializer, MealPlanSerializer, ReviewSerializer, FavouriteSerializer
 
@@ -53,8 +53,6 @@ class FavouriteDetail(generics.RetrieveAPIView):
   queryset = Favourite.objects.all()
   serializer_class = FavouriteSerializer
 
-from django.http import JsonResponse
-from .utils import get_recipe_from_groq
 
 def generate_recipe(request):
     prompt = request.GET.get('prompt')
@@ -67,6 +65,16 @@ def generate_recipe(request):
         return JsonResponse(response, safe=False)
     else:
         return JsonResponse({'error': 'Failed to get a response from the AI'}, status=500)
+
+@api_view(['GET'])
+def get_recipe_list(request):
+    query = request.GET.get('q', '')
+    if query:
+        # Call the AI model to get multiple recipe variations
+        suggested_recipes = suggest_recipes(query)
+        return suggested_recipes
+    else:
+        return JsonResponse({'error': 'No query provided'}, status=400)
 
 
 @api_view(['GET'])

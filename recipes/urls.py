@@ -14,4 +14,5 @@ urlpatterns = [
     path('favourites/<int:pk>', FavouriteDetail.as_view(), name='favourite-detail'),
     path('generate-recipe/', generate_recipe, name='generate-recipe'),
     path('search-recipe/', search_recipes, name='search-recipe'),
+    path('get-recipe-list/', get_recipe_list, name='get_recipe_list'),
 ]

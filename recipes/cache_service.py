@@ -1,12 +1,14 @@
 import redis
 import json
+from os import getenv
+from dotenv import load_dotenv
 
 
 # redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 redis_client = redis.Redis(
   host='redis-12225.c15.us-east-1-4.ec2.redns.redis-cloud.com',
   port=12225,
-  password='xadCJa5TsjjVgGzxHPzP0mRY9LUhJcPT')
+  password=getenv('RC_PWD'))
 
 def save_recipe_in_cache(recipe_id, recipe_data):
     return redis_client.set(recipe_id, json.dumps(recipe_data))

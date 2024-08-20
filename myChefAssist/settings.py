@@ -30,6 +30,18 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+CACHES = {
+    'default': {
+        'BACKEND':
+            'django_redis.cache.RedisCache',
+            'LOCATION': 'redis-12225.c15.us-east-1-4.ec2.redns.redis-cloud.com:12225',
+            'OPTIONS': {
+                'CLIENT_CLASS':
+                    'django_redis.client.DefaultClient'
+            }
+    }
+}
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

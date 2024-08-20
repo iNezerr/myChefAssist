@@ -20,6 +20,7 @@ def get_recipe_from_groq(prompt):
                     "Ensure the JSON object includes the following fields:\n"
                     "- name: string\n"
                     "- description: string\n"
+                    "- ingredients: list of strings\n"
                     "- instructions: list of strings\n"
                     "- cook_time: integer (in minutes)\n"
                     "- prep_time: integer (in minutes)\n"
@@ -96,3 +97,28 @@ def suggest_recipes(recipe_name: str):
 
     # Format as a JSON response
     return JsonResponse({'recipes': recipes})
+
+def refine_recipe_with_ingredients(original_recipe, selected_ingredients):
+    chat_completion = client.chat.completions.create(
+        messages= [
+            {
+                "role": "system",
+                "content": "You are a culinary expert that can refine a recipe based on a list of selected ingredients.\n"
+                "Adjust the recipe based on the available ingredients while keeping the core recipe the same.\n"
+                "Only update the recipe name, instructions, cook time, prep time, and nutrition facts, if neccessary.\n"
+            },
+            {
+                "role": "user",
+                "content": {
+                    f"Original Recipe:{original_recipe} \n"
+                    f"Available Ingredients: {selected_ingredients}\n"
+                    "Please refine the recipe according to the available ingredients."
+                }
+            }
+        ],
+        model="llama3-8b-8192",
+        temperature=0,
+        stream=False,
+    )
+    refined_recipe = chat_completion.choices[0].message.content
+    return refined_recipe

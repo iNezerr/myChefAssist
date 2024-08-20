@@ -4,9 +4,11 @@ from django.http import JsonResponse
 from groq import Groq
 from rest_framework import generics
 from rest_framework.decorators import api_view
-from .utils import get_recipe_from_groq, get_recipe_variations, suggest_recipes
+from .utils import get_recipe_from_groq, get_recipe_variations, refine_recipe_with_ingredients, suggest_recipes
 from .models import Ingredient, Recipe, MealPlan, Review, Favourite, RecipeIngredient
 from .serializers import IngredientSerializer, RecipeSerializer, MealPlanSerializer, ReviewSerializer, FavouriteSerializer
+from .cache_service import save_recipe_in_cache, get_recipe_from_cache
+
 
 
 client = Groq(
@@ -53,19 +55,6 @@ class FavouriteDetail(generics.RetrieveAPIView):
   queryset = Favourite.objects.all()
   serializer_class = FavouriteSerializer
 
-
-def generate_recipe(request):
-    prompt = request.GET.get('prompt')
-    if not prompt:
-        return JsonResponse({'error': 'Prompt is required'}, status=400)
-
-    response = get_recipe_from_groq(prompt)
-
-    if response:
-        return JsonResponse(response, safe=False)
-    else:
-        return JsonResponse({'error': 'Failed to get a response from the AI'}, status=500)
-
 @api_view(['GET'])
 def get_recipe_list(request):
     query = request.GET.get('q', '')
@@ -76,13 +65,48 @@ def get_recipe_list(request):
     else:
         return JsonResponse({'error': 'No query provided'}, status=400)
 
+@api_view(['POST'])
+def generate_recipe(request):
+    prompt = request.POST.get('prompt')
+    if not prompt:
+        return JsonResponse({'error': 'Prompt is required'}, status=400)
+    response = get_recipe_from_groq(prompt)
 
-@api_view(['GET'])
-def search_recipes(request):
-    query = request.GET.get('q', '')
-    if query:
-        # Call the AI model to get multiple recipe variations
-        suggested_recipes = get_recipe_variations(query)
-        return JsonResponse({'results': [recipe.dict() for recipe in suggested_recipes]})
+    if response:
+        save_recipe(response)
+        return JsonResponse(response, safe=False)
     else:
-        return JsonResponse({'error': 'No query provided'}, status=400)
+        return JsonResponse({'error': 'Failed to get a response from the AI'}, status=500)
+
+def save_recipe(recipe):
+    return save_recipe_in_cache('current_recipe', recipe)
+
+def get_recipe_ingredients(request):
+    cached_recipe = get_recipe_from_cache()
+
+    if not cached_recipe:
+        return JsonResponse({"error":"Recipe not found in chache"}, status=404)
+    ingredients = cached_recipe.get('ingredients', [])
+    recipe_name = cached_recipe.get('name', 'Recipe')
+    context = {
+            'recipe_name': recipe_name,
+            'ingredients': ingredients
+        }
+    return JsonResponse(context)
+
+@api_view(['POST'])
+def finalize_recipe(request):
+    selected_ingredients = request.POST.get('selected_ingredients')
+    original_recipe = get_recipe_from_cache()
+    print(selected_ingredients)
+
+    if not original_recipe:
+        return JsonResponse({"error":"Recipe not found in chache"}, status=404)
+    refined_recipe = refine_recipe_with_ingredients(original_recipe, selected_ingredients)
+    if not refined_recipe:
+        return JsonResponse({"error":"Failed to refine recipe"}, status=500)
+    return JsonResponse({'refined_recipe': refined_recipe})
+
+
+def save_recipe_to_DB():
+    pass

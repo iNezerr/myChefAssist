@@ -12,7 +12,8 @@ urlpatterns = [
     path('reviews/<int:pk>/', ReviewDetail.as_view(), name='review-detail'),
     path('favourites/', FavouriteList.as_view(), name='favourite-list'),
     path('favourites/<int:pk>', FavouriteDetail.as_view(), name='favourite-detail'),
-    path('generate-recipe/', generate_recipe, name='generate-recipe'),
-    path('search-recipe/', search_recipes, name='search-recipe'),
+    path('select-recipe/', generate_recipe, name='select-recipe'),
     path('get-recipe-list/', get_recipe_list, name='get_recipe_list'),
+    path('recipes/current/ingredients/', get_recipe_ingredients, name='get-recipe_ingredients'),
+    path('recipes/finalize/', finalize_recipe, name='finalize-recipe'),
 ]

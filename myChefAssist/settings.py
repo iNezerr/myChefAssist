@@ -11,8 +11,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
-from os import getenv
-from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,17 +90,27 @@ WSGI_APPLICATION = "myChefAssist.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# Add these at the top of your settings.py
+from os import getenv
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# print("Database Host:", os.getenv('PGHOST'))
+# Replace the DATABASES section of your settings.py with this
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql',
-    'NAME': getenv('PGDATABASE'),
-    'USER': getenv('PGUSER'),
-    'PASSWORD': getenv('PGPASSWORD'),
-    'HOST': getenv('PGHOST'),
-    'PORT': getenv('PGPORT', 5432),
+    'NAME': os.getenv('PGDATABASE'),
+    'USER': os.getenv('PGUSER'),
+    'PASSWORD': os.getenv('PGPASSWORD'),
+    'HOST': os.getenv('PGHOST'),
+    'PORT': os.getenv('PGPORT', 5432),
     'OPTIONS': {
-    #   'sslmode': 'require',
+      'sslmode': 'require',
     },
+    'DISABLE_SERVER_SIDE_CURSORS': True,
   }
 }
 

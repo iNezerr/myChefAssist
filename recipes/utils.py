@@ -1,14 +1,16 @@
 # recipes/utils.py
 
 import os
+from os import getenv
 import json
 from typing import List
 from django.http import JsonResponse
 from groq import Groq
+from dotenv import load_dotenv
 
 from recipes.models import Recipe
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def get_recipe_from_groq(prompt):
     chat_completion = client.chat.completions.create(

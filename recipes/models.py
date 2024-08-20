@@ -18,7 +18,7 @@ class Recipe(models.Model):
     cook_time = models.IntegerField(null=True, blank=True)
     prep_time = models.IntegerField(null=True, blank=True)
     nutrition_facts = models.TextField(null=True, blank=True)
-    ingredients = models.ManyToManyField('Ingredient', through='RecipeIngredient')
+    ingredients = models.TextField()
 
     def __str__(self):
         return self.name

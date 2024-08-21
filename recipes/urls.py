@@ -16,4 +16,6 @@ urlpatterns = [
     path('get-recipe-list/', get_recipe_list, name='get_recipe_list'),
     path('recipes/current/ingredients/', get_recipe_ingredients, name='get-recipe_ingredients'),
     path('recipes/finalize/', finalize_recipe, name='finalize-recipe'),
+    path('save-recipe/', save_recipe_to_DB, name='save_recipe_to_DB'),
+
 ]

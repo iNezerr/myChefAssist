@@ -96,7 +96,7 @@ def get_recipe_ingredients(request):
 
 @api_view(['POST'])
 def finalize_recipe(request):
-    selected_ingredients = request.POST.get('selected_ingredients')
+    selected_ingredients = request.data.get('selected_ingredients', [])
     original_recipe = get_recipe_from_cache()
     print(selected_ingredients)
 
@@ -105,8 +105,26 @@ def finalize_recipe(request):
     refined_recipe = refine_recipe_with_ingredients(original_recipe, selected_ingredients)
     if not refined_recipe:
         return JsonResponse({"error":"Failed to refine recipe"}, status=500)
-    return JsonResponse({'refined_recipe': refined_recipe})
+    return JsonResponse({"refined_recipe": refined_recipe}, safe=False)
 
 
-def save_recipe_to_DB():
-    pass
+def save_recipe_to_DB(request):
+    # Retrieve the cached recipe
+    cached_recipe = get_recipe_from_cache()
+
+    if cached_recipe:
+        # Create a new Recipe object and save it to the database
+        recipe = Recipe(
+            name=cached_recipe.get('name'),
+            description=cached_recipe.get('description'),
+            instructions=cached_recipe.get('instructions'),
+            cook_time=cached_recipe.get('cook_time'),
+            prep_time=cached_recipe.get('prep_time'),
+            nutrition_facts=cached_recipe.get('nutrition_facts'),
+            ingredients=cached_recipe.get('ingredients')
+        )
+        recipe.save()
+
+        return JsonResponse({'message': 'Recipe saved successfully.'})
+    else:
+        return JsonResponse({'error': 'No recipe found in cache.'}, status=400)

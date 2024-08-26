@@ -27,7 +27,6 @@ SECRET_KEY = "django-insecure-7y)suw+5382dg_j3kqkm66s@0xk(%tgm031^aj8)u9sqj3j461
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -53,14 +52,25 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    "corsheaders",
 
     "appUsers",
     "recipes"
 ]
 
+# CORS settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", # React
+    "https://zn2qvsm7-5173.uks1.devtunnels.ms" # React outside of localhost
+]
+CORS_ALLOW_ALL_ORIGINS = True
+
+ALLOWED_HOSTS = []
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",

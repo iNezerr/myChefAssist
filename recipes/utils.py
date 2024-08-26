@@ -25,6 +25,8 @@ def get_recipe_from_groq(prompt):
                     "- cook_time: integer (in minutes)\n"
                     "- prep_time: integer (in minutes)\n"
                     "- nutrition_facts: string\n"
+                    "Do not include any extraneous text or formatting like backticks or code blocks. "
+                    "Output only valid JSON."
                 )
             },
             {
@@ -67,36 +69,42 @@ def suggest_recipes(recipe_name: str):
         messages=[
             {
                 "role": "system",
-                "content": "You are a recipe database that outputs only a list of recipe names.\n"
-                           "You give at least 3 recipe names.\n"
-                           "Ensure it includes only the name of the recipes:\n"
-                           "DOn't number them"
+                "content": (
+                    "You are the best expert recipe database that outputs a list of at least 3 recipes in JSON format.\n"
+                    "Ensure the JSON object includes the following fields:\n"
+                    "- 'id': int\n"
+                    "- 'name': string\n"
+                    "- 'description': string\n"
+                    "Do not include any extraneous text or formatting like backticks or code blocks. "
+                    "Output only valid JSON."
+                ),
             },
             {
                 "role": "user",
-                "content": f"Fetch a list of recipes for {recipe_name}",
-            },
+                "content": recipe_name
+            }
         ],
         model="llama3-8b-8192",
         temperature=0,
         stream=False,
-        # response_format={"type": "json_array"},
     )
-
 
     # Extract the response content
     response_text = chat_completion.choices[0].message.content.strip()
 
-    # Split the response into a list of recipe names
-    recipe_names = response_text.split('\n')
-    exclude_words = {'recipe', 'recipes', 'name', 'names', 'list', 'lists', 'title', 'titles'}
+    try:
+        # Convert the string response to a JSON object
+        recipes_json = json.loads(response_text)
 
-    # Filter out non-recipe lines (e.g., introduction lines)
-    recipes = [line.strip() for line in recipe_names if line.strip() and not any(word in line.lower() for word in exclude_words)]
+        # Ensure the response is a list of recipes
+        if isinstance(recipes_json, list):
+            return JsonResponse({'recipes': recipes_json})
+        else:
+            return JsonResponse({'error': 'Unexpected response format'}, status=500)
 
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Failed to parse JSON from AI response'}, status=500)
 
-    # Format as a JSON response
-    return JsonResponse({'recipes': recipes})
 
 def refine_recipe_with_ingredients(original_recipe, selected_ingredients):
     chat_completion = client.chat.completions.create(

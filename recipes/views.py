@@ -1,13 +1,18 @@
 import os
 import json
+from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from groq import Groq
+import requests
 from rest_framework import generics
 from rest_framework.decorators import api_view
 from .utils import get_recipe_from_groq, get_recipe_variations, refine_recipe_with_ingredients, suggest_recipes
 from .models import Ingredient, Recipe, MealPlan, Review, Favourite, RecipeIngredient
 from .serializers import IngredientSerializer, RecipeSerializer, MealPlanSerializer, ReviewSerializer, FavouriteSerializer
 from .cache_service import save_recipe_in_cache, get_recipe_from_cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -65,14 +70,30 @@ def get_recipe_list(request):
     else:
         return JsonResponse({'error': 'No query provided'}, status=400)
 
+def fetch_image(recipe_name):
+    search_url = f"https://www.food.com/search/{recipe_name.replace(' ', '%20')}"
+    response = requests.get(search_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find the first recipe card image
+    image_tag = soup.find('img', class_='search-card__img')
+    if image_tag:
+        return image_tag['src']
+    return None
+
 @api_view(['POST'])
 def generate_recipe(request):
-    prompt = request.POST.get('prompt')
+    logger.info(f'Received data: {request.data}')
+
+    # Use request.data for JSON payloads
+    prompt = request.data.get('recipe_name')
     if not prompt:
         return JsonResponse({'error': 'Prompt is required'}, status=400)
     response = get_recipe_from_groq(prompt)
 
     if response:
+        image_url = fetch_image(prompt)  # Fetch the image
+        response['image_url'] = image_url  # Attach the image URL to the response
         save_recipe(response)
         return JsonResponse(response, safe=False)
     else:

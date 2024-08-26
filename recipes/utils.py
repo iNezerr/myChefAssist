@@ -1,14 +1,16 @@
 # recipes/utils.py
 
 import os
+from os import getenv
 import json
 from typing import List
 from django.http import JsonResponse
 from groq import Groq
+from dotenv import load_dotenv
 
 from recipes.models import Recipe
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def get_recipe_from_groq(prompt):
     chat_completion = client.chat.completions.create(
@@ -107,26 +109,64 @@ def suggest_recipes(recipe_name: str):
 
 
 def refine_recipe_with_ingredients(original_recipe, selected_ingredients):
+    print(selected_ingredients)
+    if not isinstance(selected_ingredients, list):
+        return {"error": "selected_ingredients should be a list."}
+
+    # Convert the list of selected ingredients to a string
+    selected_ingredients_str = "\n".join(selected_ingredients)
+
     chat_completion = client.chat.completions.create(
-        messages= [
+        messages=[
             {
                 "role": "system",
-                "content": "You are a culinary expert that can refine a recipe based on a list of selected ingredients.\n"
-                "Adjust the recipe based on the available ingredients while keeping the core recipe the same.\n"
-                "Only update the recipe name, instructions, cook time, prep time, and nutrition facts, if neccessary.\n"
+                "content": (
+                    "You are a culinary expert that refines a recipe based on the list of available ingredients.\n"
+                    "You always update the recipe while keeping its core elements the same.\n"
+                    "You will be given the original recipe and the ingredients available. \n"
+                    "Check the differences between the original recipe and the ingredients available.\n"
+                    "Use the ingredients available to give a MODIFIED version of the original recipe.\n"
+                    "Use the original name of the recipe. Do not change it.\n"
+                    "Use the available ingredients as the new ingredients. \n"
+                    "You only refine the instructions, cook time, prep time, and nutrition facts if necessary.\n"
+                    "And you output in JSON. \n"
+                    "Ensure that the JSON object includes the following:\n"
+                    "- name: string\n"
+                    "- description: string\n"
+                    "- ingredients: list of strings\n"
+                    "- instructions: list of strings\n"
+                    "- cook_time: integer (in minutes)\n"
+                    "- prep_time: integer (in minutes)\n"
+                    "- nutrition_facts: string\n"
+                    # "Provide only this JSON object in your response, with no additional text and make sure all brackets that opened are closed when finished."
+                )
             },
             {
                 "role": "user",
-                "content": {
-                    f"Original Recipe:{original_recipe} \n"
-                    f"Available Ingredients: {selected_ingredients}\n"
-                    "Please refine the recipe according to the available ingredients."
-                }
+                "content": (
+                    f"Original Recipe: {original_recipe}\n"
+                    f"Available Ingredients:\n{selected_ingredients_str}\n"
+                    "Refine the recipe based on these ingredients and provide the result in the exact JSON format specified above."
+                )
             }
         ],
         model="llama3-8b-8192",
         temperature=0,
         stream=False,
+        response_format={"type": "json_object"},
     )
-    refined_recipe = chat_completion.choices[0].message.content
-    return refined_recipe
+
+    # Extract the response content
+    refined_recipe_string = chat_completion.choices[0].message.content
+    refined_recipe_str = json.loads(refined_recipe_string)
+    return refined_recipe_str
+
+    # Try parsing the response into a JSON object
+    try:
+        refined_recipe_json = json.loads(refined_recipe_str)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse the response from the AI model. Response may not be in JSON format."}
+
+    return refined_recipe_json
+
+

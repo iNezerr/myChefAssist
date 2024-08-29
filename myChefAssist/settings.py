@@ -58,12 +58,13 @@ INSTALLED_APPS = [
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1",
     "http://localhost:5173", # React
     "https://zn2qvsm7-5173.uks1.devtunnels.ms" # React outside of localhost
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
-ALLOWED_HOSTS = [".vercel.app"]
+ALLOWED_HOSTS = [".vercel.app", "127.0.0.1"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
